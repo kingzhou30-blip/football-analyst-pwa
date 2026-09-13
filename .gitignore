@@ -1,0 +1,57 @@
+# Node / Frontend
+node_modules/
+.svelte-kit/
+build/
+dist/
+.pnpm-store/
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ML Models (binary besar)
+*.pkl
+*.h5
+*.pt
+*.onnx
+ml/models/*.pkl
+ml/models/*.h5
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets.json
+
+# Database
+*.sqlite
+*.db
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Termux specific
+.termux/

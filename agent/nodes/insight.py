@@ -9,8 +9,7 @@ import httpx
 
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "nvidia/nemotron-3.5-lightning"
-
+MODEL = "meta-llama/llama-3.2-3b-instruct:free"
 
 def _fallback_insight(match: dict[str, Any], analysis: dict[str, Any]) -> str:
     """Membuat insight deterministik ketika LLM tidak tersedia."""

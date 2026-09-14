@@ -1,15 +1,17 @@
-"""Node kelima: membuat narasi insight melalui OpenRouter com fallback lokal."""
+"""Node kelima: membuat narasi insight melalui OpenRouter dengan fallback lokal."""
 
 from __future__ import annotations
 
 import os
+import time
 from typing import Any
 
 import httpx
 
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "google/gemini-2.0-flash-exp:free"
+MODEL = "google/gemma-4-31b-it:free"
+
 
 def _fallback_insight(match: dict[str, Any], analysis: dict[str, Any]) -> str:
     """Membuat insight deterministik ketika LLM tidak tersedia."""
@@ -26,10 +28,15 @@ def _fallback_insight(match: dict[str, Any], analysis: dict[str, Any]) -> str:
 def generate_insight(state: dict[str, Any]) -> dict[str, Any]:
     """Generate narasi dua kalimat untuk setiap analisis dengan fallback lokal."""
     api_key = os.getenv("OPENROUTER_API_KEY")
-    for analysis in state.get("analyses", []):
+    for i, analysis in enumerate(state.get("analyses", [])):
+        # Delay untuk menghindari rate limit 429 (20 req/menit)
+        if i > 0:
+            time.sleep(2)
+
         match = analysis.get("match_data", {})
         prompt = (
-            f"Analisis pertandingan {match.get('home_team', 'Home')} vs {match.get('away_team', 'Away')}. "
+            f"Analisis pertandingan {match.get('home_team', 'Home')} vs "
+            f"{match.get('away_team', 'Away')}. "
             f"Prediksi: Over/Under={analysis['over_under']['pick']}, "
             f"BTTS={analysis['btts']['pick']}, Win={analysis['win']['pick']}, "
             f"Handicap={analysis['handicap']['pick']}. "
@@ -41,8 +48,14 @@ def generate_insight(state: dict[str, Any]) -> dict[str, Any]:
             with httpx.Client(timeout=30) as client:
                 response = client.post(
                     OPENROUTER_URL,
-                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                    json={"model": MODEL, "messages": [{"role": "user", "content": prompt}]},
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": MODEL,
+                        "messages": [{"role": "user", "content": prompt}],
+                    },
                 )
                 response.raise_for_status()
                 payload = response.json()
@@ -52,3 +65,4 @@ def generate_insight(state: dict[str, Any]) -> dict[str, Any]:
             analysis["agent_insight"] = _fallback_insight(match, analysis)
             state.setdefault("errors", []).append(f"insight: {exc}")
     return state
+

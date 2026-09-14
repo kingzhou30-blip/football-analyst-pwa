@@ -14,16 +14,21 @@ def publish_to_supabase(state: dict[str, Any]) -> dict[str, Any]:
     supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
     service_key = os.getenv("SUPABASE_SERVICE_KEY", "")
     published_count = 0
+
     if not supabase_url or not service_key:
-        state.setdefault("errors", []).append("publish: SUPABASE_URL atau SUPABASE_SERVICE_KEY belum dikonfigurasi")
+        state.setdefault("errors", []).append(
+            "publish: SUPABASE_URL atau SUPABASE_SERVICE_KEY belum dikonfigurasi"
+        )
         state["published_count"] = 0
         return state
+
     headers = {
         "apikey": service_key,
         "Authorization": f"Bearer {service_key}",
         "Content-Type": "application/json",
         "Prefer": "return=representation,resolution=merge-duplicates",
     }
+
     with httpx.Client(timeout=30) as client:
         for analysis in state.get("analyses", []):
             match = analysis.get("match_data", {})
@@ -43,12 +48,19 @@ def publish_to_supabase(state: dict[str, Any]) -> dict[str, Any]:
                     "model_version": "v1.0.0",
                     "is_published": True,
                 }
-                response = client.post(f"{supabase_url}/rest/v1/daily_matches", headers=headers, json=match_row)
+                response = client.post(
+                    f"{supabase_url}/rest/v1/daily_matches?on_conflict=match_id",
+                    headers=headers,
+                    json=match_row,
+                )
                 response.raise_for_status()
                 inserted = response.json()
+
                 if not isinstance(inserted, list) or not inserted:
                     raise RuntimeError("Supabase tidak mengembalikan daily_match")
+
                 daily_match_id = inserted[0]["id"]
+
                 for category in ("over_under", "btts", "win", "handicap"):
                     category_data = analysis[category]
                     analysis_response = client.post(
@@ -64,9 +76,14 @@ def publish_to_supabase(state: dict[str, Any]) -> dict[str, Any]:
                             "reason": category_data.get("reason"),
                         },
                     )
+                    # Skip 409 Conflict — data sudah ada (duplikat)
+                    if analysis_response.status_code == 409:
+                        continue
                     analysis_response.raise_for_status()
+
                 published_count += 1
             except Exception as exc:
                 state.setdefault("errors", []).append(f"publish: {exc}")
+
     state["published_count"] = published_count
     return state

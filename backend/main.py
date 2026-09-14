@@ -21,7 +21,16 @@ LOGGER = logging.getLogger(__name__)
 def create_app() -> Flask:
     """Membuat dan mengonfigurasi instance Flask."""
     app = Flask(__name__)
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            "https://football-analyst-pwa.pages.dev",
+            "http://localhost:5173",
+            "http://localhost:8000",
+            "http://127.0.0.1:5173",
+        ]
+    }
+})
     app.register_blueprint(health_bp)
     app.register_blueprint(predictions_bp)
 

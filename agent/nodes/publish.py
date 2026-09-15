@@ -9,6 +9,12 @@ from typing import Any
 import httpx
 
 
+# Confidence minimum untuk kategori yang layak dipublikasikan.
+# Prediksi di bawah threshold ini dianggap terlalu tidak pasti
+# dan dibuang agar akurasi keseluruhan meningkat.
+MIN_CATEGORY_CONFIDENCE = 60.0
+
+
 def publish_to_supabase(state: dict[str, Any]) -> dict[str, Any]:
     """Simpan daily_matches dan empat match_analyses ke Supabase."""
     supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
@@ -63,6 +69,11 @@ def publish_to_supabase(state: dict[str, Any]) -> dict[str, Any]:
 
                 for category in ("over_under", "btts", "win", "handicap"):
                     category_data = analysis[category]
+
+                    # Skip kategori dengan confidence di bawah threshold
+                    if category_data.get("confidence", 0) < MIN_CATEGORY_CONFIDENCE:
+                        continue
+
                     analysis_response = client.post(
                         f"{supabase_url}/rest/v1/match_analyses",
                         headers=headers,

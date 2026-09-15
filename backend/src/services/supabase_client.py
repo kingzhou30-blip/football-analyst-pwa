@@ -59,7 +59,8 @@ class SupabaseClient:
             "order": "match_score.desc.nullslast,kickoff.asc",
         }
         if target_date:
-            params["and"] = f"(kickoff.gte.{target_date}T00:00:00Z,kickoff.lt.{_next_date(target_date)}T00:00:00Z)"
+            # Ambil semua match mulai dari target_date (termasuk hari-hari berikutnya)
+            params["kickoff"] = f"gte.{target_date}T00:00:00Z"
         return self._request("daily_matches", params)
 
     def get_match_detail(self, match_id: str) -> dict[str, Any] | None:

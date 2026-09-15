@@ -42,7 +42,7 @@
 <article class="match-card">
   <header class="match-header">
     <div class="league-info">
-      <span class="league-badge">{match.league_code || match.league}</span>
+      <span class="league-badge">{match.league_code || match.league || "Liga"}</span>
       <span class="kickoff">{formatKickoff(match.kickoff)}</span>
     </div>
     <span class="match-score">Score {match.match_score.toFixed(1)}</span>

@@ -6,14 +6,15 @@ import logging
 import os
 
 from dotenv import load_dotenv
+
+load_dotenv()
+
 from flask import Flask, jsonify
 from flask_cors import CORS
 
 from src.api.routes.health import health_bp
 from src.api.routes.predictions import predictions_bp
 
-
-load_dotenv()
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 

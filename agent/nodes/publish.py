@@ -12,7 +12,13 @@ import httpx
 # Confidence minimum untuk kategori yang layak dipublikasikan.
 # Prediksi di bawah threshold ini dianggap terlalu tidak pasti
 # dan dibuang agar akurasi keseluruhan meningkat.
-MIN_CATEGORY_CONFIDENCE = 60.0
+# Threshold per kategori — disesuaikan dengan distribusi confidence model
+MIN_CATEGORY_CONFIDENCE = {
+    "over_under": 55.0,
+    "btts": 55.0,
+    "win": 50.0,
+    "handicap": 60.0,
+}
 
 
 def publish_to_supabase(state: dict[str, Any]) -> dict[str, Any]:
@@ -71,7 +77,7 @@ def publish_to_supabase(state: dict[str, Any]) -> dict[str, Any]:
                     category_data = analysis[category]
 
                     # Skip kategori dengan confidence di bawah threshold
-                    if category_data.get("confidence", 0) < MIN_CATEGORY_CONFIDENCE:
+                    if category_data.get("confidence", 0) < MIN_CATEGORY_CONFIDENCE.get(category, 60.0): 
                         continue
 
                     analysis_response = client.post(

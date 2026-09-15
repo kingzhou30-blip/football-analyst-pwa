@@ -1,6 +1,6 @@
 import type { DailyResponse, Match } from './types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://footballanalystskingzhou30.pythonanywhere.com';
+const API_URL = import.meta.env.VITE_API_URL || 'https://footballanalystkingzhou30.pythonanywhere.com';
 
 export async function fetchDaily(date?: string): Promise<DailyResponse> {
   const url = new URL(`${API_URL}/api/v1/daily`);

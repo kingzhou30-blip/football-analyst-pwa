@@ -52,14 +52,15 @@ class SupabaseClient:
             raise exc
 
     def get_daily_predictions(self, target_date: str | None = None) -> list[dict[str, Any]]:
-        """Mengambil prediksi terpublikasi dan memfilter tanggal bila diberikan."""
+        """Mengambil pertandingan terpublikasi beserta seluruh analisisnya, memfilter tanggal bila diberikan."""
         params = {
-            "select": "*",
+            "select": "*,match_analyses(*)",
+            "is_published": "eq.true",
             "order": "match_score.desc.nullslast,kickoff.asc",
         }
         if target_date:
             params["and"] = f"(kickoff.gte.{target_date}T00:00:00Z,kickoff.lt.{_next_date(target_date)}T00:00:00Z)"
-        return self._request("view_daily_predictions", params)
+        return self._request("daily_matches", params)
 
     def get_match_detail(self, match_id: str) -> dict[str, Any] | None:
         """Mengambil pertandingan berdasarkan UUID internal atau match_id eksternal."""

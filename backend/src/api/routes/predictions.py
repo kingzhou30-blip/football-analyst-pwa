@@ -59,7 +59,7 @@ def get_daily():
         }
     """
     try:
-        target_date = request.args.get("date")
+        target_date = request.args.get("date") or datetime.now(timezone.utc).date().isoformat()
 
         # Validasi format tanggal kalau ada
         if target_date:

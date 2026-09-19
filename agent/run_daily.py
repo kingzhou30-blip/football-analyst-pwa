@@ -19,6 +19,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from agent.nodes.analyze import analyze_matches
 from agent.nodes.enrich import enrich_features
+from agent.nodes.evaluate import evaluate_predictions
 from agent.nodes.fetch import fetch_fixtures
 from agent.nodes.insight import generate_insight
 from agent.nodes.publish import publish_to_supabase
@@ -26,7 +27,7 @@ from agent.nodes.select import select_top
 
 
 def main() -> dict:
-    """Menjalankan pipeline state machine enam node secara berurutan."""
+    """Menjalankan pipeline state machine tujuh node secara berurutan."""
     print(f"🚀 Agent mulai: {datetime.now().isoformat()}")
 
     state = {
@@ -35,7 +36,12 @@ def main() -> dict:
         "analyses": [],
         "errors": [],
         "published_count": 0,
+        "evaluated_count": 0,
     }
+
+    print("📊 [0/6] Evaluating past predictions...")
+    state = evaluate_predictions(state)
+    print(f"   → {state['evaluated_count']} predictions evaluated")
 
     print("📥 [1/6] Fetching fixtures...")
     state = fetch_fixtures(state)

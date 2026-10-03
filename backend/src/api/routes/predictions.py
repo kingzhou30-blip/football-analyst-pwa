@@ -112,13 +112,13 @@ def get_match_detail(match_id: str):
 @predictions_bp.route("/accuracy", methods=["GET"])
 def get_accuracy():
     """
-    Endpoint untuk mengambil statistik akurasi model.
+    Endpoint untuk mengambil statistik akurasi model dari evaluasi nyata.
 
     Query params:
         days (opsional): jumlah hari terakhir. Default: 30. Range: 1-3650.
 
     Returns:
-        JSON dengan statistik akurasi per kategori
+        JSON dengan overall accuracy, breakdown per kategori, dan per confidence bucket
     """
     raw_days = request.args.get("days", "30")
 
@@ -130,13 +130,44 @@ def get_accuracy():
         return _error("Parameter days harus berupa bilangan bulat antara 1 dan 3650", 400)
 
     try:
-        stats = supabase_client.get_accuracy_stats(days)
-        return jsonify({"days": days, "count": len(stats), "stats": stats})
+        rows = supabase_client.get_accuracy_breakdown(days)
+
+        def _summarize(items):
+            total = len(items)
+            correct = sum(1 for r in items if r.get("is_correct") is True)
+            pct = round((correct / total) * 100, 1) if total else 0.0
+            return {"total": total, "correct": correct, "accuracy_percent": pct}
+
+        def _bucket(conf):
+            if conf is None:
+                return "unknown"
+            try:
+                c = float(conf)
+                if c >= 90:
+                    return "90+"
+                lower = int(c // 10) * 10
+                return f"{lower}-{lower + 10}"
+            except (TypeError, ValueError):
+                return "unknown"
+
+        by_category = {}
+        by_bucket = {}
+        for row in rows:
+            ma = row.get("match_analyses") or {}
+            cat = ma.get("category", "unknown")
+            bucket = _bucket(ma.get("confidence"))
+            by_category.setdefault(cat, []).append(row)
+            by_bucket.setdefault(bucket, []).append(row)
+
+        return jsonify({
+            "days": days,
+            "overall": _summarize(rows),
+            "by_category": {k: _summarize(v) for k, v in by_category.items()},
+            "by_confidence_bucket": {k: _summarize(v) for k, v in sorted(by_bucket.items())},
+        })
     except Exception as exc:
         LOGGER.exception("Gagal mengambil statistik akurasi")
         return _error(f"Gagal mengambil statistik akurasi: {exc}", 502)
-
-
 @predictions_bp.route("/health", methods=["GET"])
 def health_check():
     """

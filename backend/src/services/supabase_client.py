@@ -85,7 +85,19 @@ class SupabaseClient:
         })
 
 
+    def get_accuracy_breakdown(self, days: int = 30) -> list[dict[str, Any]]:
+        """Mengambil seluruh evaluasi prediksi untuk rentang hari terakhir."""
+        safe_days = max(1, min(days, 3650))
+        start_date = (date.today() - timedelta(days=safe_days - 1)).isoformat()
+        # Query ke prediction_results + join match_analyses untuk category & confidence
+        return self._request("prediction_results", {
+            "select": "id,analysis_id,is_correct,actual_home_score,actual_away_score,actual_result,evaluated_at,match_analyses(category,confidence)",
+            "evaluated_at": f"gte.{start_date}T00:00:00Z",
+            "is_correct": "not.is.null",
+        })
+
 def _next_date(value: str) -> str:
+
     """Menghasilkan tanggal berikutnya dari string ISO YYYY-MM-DD."""
     return (date.fromisoformat(value) + timedelta(days=1)).isoformat()
 

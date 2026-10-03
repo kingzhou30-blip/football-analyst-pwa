@@ -67,7 +67,7 @@ def evaluate_predictions(state: dict[str, Any]) -> dict[str, Any]:
                     continue
 
                 evaluated_resp = client.get(
-                    f"{supabase_url}/rest/v1/prediction_evaluations",
+                    f"{supabase_url}/rest/v1/prediction_results",
                     params={"select": "analysis_id", "match_id": f"eq.{match['id']}"},
                     headers=supabase_headers,
                 )
@@ -94,19 +94,15 @@ def evaluate_predictions(state: dict[str, Any]) -> dict[str, Any]:
                 for a in pending:
                     is_correct = check_correctness(a["category"], a["pick"], home_score, away_score)
                     insert_resp = client.post(
-                        f"{supabase_url}/rest/v1/prediction_evaluations",
+                        f"{supabase_url}/rest/v1/prediction_results",
                         headers=supabase_headers,
                         json={
                             "analysis_id": a["id"],
-                            "match_id": match["id"],
-                            "category": a["category"],
-                            "predicted_pick": a["pick"],
-                            "predicted_confidence": a["confidence"],
-                            "confidence_bucket": _confidence_bucket(a["confidence"]),
                             "actual_home_score": home_score,
                             "actual_away_score": away_score,
                             "actual_result": f"{home_score}-{away_score}",
                             "is_correct": is_correct,
+                            "evaluated_at": datetime.now(timezone.utc).isoformat(),
                         },
                     )
                     insert_resp.raise_for_status()
